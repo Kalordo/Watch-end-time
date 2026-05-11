@@ -16,7 +16,7 @@ Createur : 3Devs.
 
 ## Fonctionnalites
 
-- Affichage `Fin HH:MM` integre dans les controles YouTube.
+- Affichage `Fin HH:MM:SS` integre dans les controles YouTube.
 - Mise a jour pendant la lecture, apres pause/reprise, seek et changement de vitesse.
 - Detection des videos terminees et des lives sans duree fiable.
 - Aucune permission sensible et aucune collecte de donnees.

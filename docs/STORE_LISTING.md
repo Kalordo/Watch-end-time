@@ -14,7 +14,7 @@ Affiche l'heure estimee de fin directement dans le lecteur YouTube.
 
 ## Description
 
-Watch End Time for YouTube ajoute un badge discret dans les controles du lecteur YouTube pour indiquer a quelle heure la video devrait se terminer.
+Watch End Time for YouTube ajoute un badge discret dans les controles du lecteur YouTube pour indiquer a quelle heure la video devrait se terminer, a la seconde pres.
 
 Le calcul prend en compte la duree restante, l'heure locale et la vitesse de lecture actuelle. Si vous regardez une video en 1.25x, 1.5x ou 2x, l'heure de fin est ajustee automatiquement.
 

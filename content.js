@@ -21,13 +21,14 @@
   function formatClock(date) {
     return new Intl.DateTimeFormat(undefined, {
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
+      second: "2-digit"
     }).format(date);
   }
 
   function getEndTimeState(video, adapter) {
     if (!video) {
-      return { label: "Fin --:--", isActive: false };
+      return { label: "Fin --:--:--", isActive: false };
     }
 
     if (adapter?.isLive?.()) {
@@ -115,7 +116,7 @@
     element.className = "watch-end-time-display";
     element.dataset.state = "inactive";
     element.title = "Heure estimée de fin, ajustée à la vitesse de lecture";
-    element.textContent = "Fin --:--";
+    element.textContent = "Fin --:--:--";
     return element;
   }
 

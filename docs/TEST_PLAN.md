@@ -10,7 +10,7 @@
 ## YouTube
 
 - Ouvrir une video courte.
-- Verifier que le badge `Fin HH:MM` apparait a cote de l'horodatage YouTube.
+- Verifier que le badge `Fin HH:MM:SS` apparait a cote de l'horodatage YouTube.
 - Lancer, mettre en pause, reprendre et verifier que le badge reste visible.
 - Changer la vitesse de lecture en `0.75x`, `1x`, `1.5x` et `2x`, puis verifier que l'heure change.
 - Avancer et reculer dans la video, puis verifier que l'heure est recalculee.

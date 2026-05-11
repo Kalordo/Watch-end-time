@@ -3,7 +3,7 @@
   "name": "Watch End Time for YouTube",
   "short_name": "Watch End Time",
   "description": "Affiche l'heure estimée de fin directement dans le lecteur YouTube, en tenant compte de la vitesse de lecture.",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "author": "3Devs",
   "icons": {
     "16": "icons/icon16.png",
