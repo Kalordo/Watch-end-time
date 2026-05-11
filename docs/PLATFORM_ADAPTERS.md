@@ -21,5 +21,8 @@ heure de fin = maintenant + (duree totale - temps courant) / vitesse de lecture
 - `netflix` : integration dans les controles du lecteur si un ancrage fiable est detecte.
 - `primeVideo` : integration dans les controles du lecteur si un ancrage fiable est detecte.
 - `disneyPlus` : integration dans les controles du lecteur si un ancrage fiable est detecte.
+- `vimeo` : integration dans les controles du lecteur si un ancrage fiable est detecte.
+- `dailymotion` : integration dans les controles du lecteur si un ancrage fiable est detecte.
+- `twitch` : integration limitee aux VOD/replays quand une duree fiable est exposee.
 
 Si un adaptateur ne trouve pas d'ancrage propre dans les controles du lecteur, il ne doit rien afficher. Les badges flottants globaux sont volontairement evites.

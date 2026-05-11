@@ -42,6 +42,24 @@
 - Verifier qu'aucun badge ne s'affiche si les controles Disney+ ne sont pas detectes.
 - Verifier qu'aucun badge ne s'affiche sur une page Disney+ sans lecteur video actif.
 
+## Vimeo
+
+- Ouvrir une video Vimeo et verifier qu'un badge `Fin HH:MM:SS` apparait dans les controles du lecteur.
+- Changer la position de lecture et verifier que l'heure est recalculee.
+- Verifier qu'aucun badge ne s'affiche si les controles Vimeo ne sont pas detectes.
+
+## Dailymotion
+
+- Ouvrir une video Dailymotion et verifier qu'un badge `Fin HH:MM:SS` apparait dans les controles du lecteur.
+- Changer la position de lecture et verifier que l'heure est recalculee.
+- Verifier qu'aucun badge ne s'affiche si les controles Dailymotion ne sont pas detectes.
+
+## Twitch
+
+- Ouvrir une VOD ou un replay Twitch et verifier qu'un badge `Fin HH:MM:SS` apparait dans les controles du lecteur.
+- Verifier qu'aucun badge ne s'affiche sur un live Twitch.
+- Verifier que le badge ne bloque aucun bouton du lecteur Twitch.
+
 ## Regression
 
 - Verifier que les controles YouTube restent cliquables.

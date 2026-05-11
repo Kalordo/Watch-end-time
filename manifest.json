@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Watch End Time",
   "short_name": "Watch End Time",
-  "description": "Affiche l'heure estimée de fin dans les contrôles des lecteurs YouTube, Netflix, Prime Video et Disney+.",
-  "version": "0.5.0",
+  "description": "Affiche l'heure estimée de fin dans les contrôles des lecteurs YouTube, Netflix, Prime Video, Disney+, Vimeo, Dailymotion et Twitch.",
+  "version": "0.6.0",
   "author": "3Devs",
   "icons": {
     "16": "icons/icon16.png",
@@ -40,7 +40,14 @@
         "https://www.disneyplus.com/*",
         "https://*.disneyplus.com/*",
         "https://*.bamgrid.com/*",
-        "https://*.disney-plus.net/*"
+        "https://*.disney-plus.net/*",
+        "https://vimeo.com/*",
+        "https://*.vimeo.com/*",
+        "https://www.dailymotion.com/*",
+        "https://*.dailymotion.com/*",
+        "https://dai.ly/*",
+        "https://www.twitch.tv/*",
+        "https://*.twitch.tv/*"
       ],
       "js": [
         "content.js"
@@ -48,7 +55,8 @@
       "css": [
         "styles.css"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ]
 }

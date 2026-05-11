@@ -8,6 +8,7 @@ Captures recommandees pour la fiche publique :
 4. Netflix avec le badge integre dans les controles du lecteur, si l'ancrage est detecte.
 5. Prime Video avec le badge integre dans les controles du lecteur, si l'ancrage est detecte.
 6. Disney+ avec le badge integre dans les controles du lecteur, si l'ancrage est detecte.
+7. Vimeo ou Dailymotion avec le badge integre dans les controles du lecteur, si l'ancrage est detecte.
 
 Conseils :
 

@@ -21,21 +21,93 @@
   let updateTimer = null;
   let activeVideo = null;
   let lastUserActivityAt = Date.now();
+  let activityUpdateFrame = null;
+  const fullscreenRetryTimers = new Set();
 
-  if (window.top !== window) {
+  function canRunInFrame() {
+    if (window.top === window) {
+      return true;
+    }
+
+    return matchesDomain(location.hostname, ["vimeo.com", "dailymotion.com", "dai.ly", "twitch.tv"]);
+  }
+
+  if (!canRunInFrame()) {
     document.getElementById(DISPLAY_ID)?.remove();
     return;
   }
 
   window[INSTANCE_CLEANUP_KEY]?.();
 
-  function markUserActivity() {
+  function getActivityContainer(adapter = getActiveAdapter()) {
+    const video = adapter?.findVideo?.();
+
+    if (!video) {
+      return null;
+    }
+
+    if (adapter?.id === "twitch") {
+      return findTwitchVideoContainer(video);
+    }
+
+    return findVideoContainer(video);
+  }
+
+  function isPointerInElement(event, element) {
+    if (!element || typeof event.clientX !== "number" || typeof event.clientY !== "number") {
+      return false;
+    }
+
+    const rect = element.getBoundingClientRect();
+
+    return event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+  }
+
+  function markUserActivity(event) {
+    const adapter = getActiveAdapter();
+
+    if (adapter?.hideWhenControlsInactive && event && "clientX" in event) {
+      const activityContainer = getActivityContainer(adapter);
+
+      if (!isPointerInElement(event, activityContainer)) {
+        return;
+      }
+    }
+
     lastUserActivityAt = Date.now();
+
+    if (!adapter?.hideWhenControlsInactive || activityUpdateFrame) {
+      return;
+    }
+
+    activityUpdateFrame = window.requestAnimationFrame(() => {
+      activityUpdateFrame = null;
+      updateEndTime();
+    });
+  }
+
+  function handlePointerOut(event) {
+    const adapter = getActiveAdapter();
+
+    if (adapter?.id !== "twitch") {
+      return;
+    }
+
+    const activityContainer = getActivityContainer(adapter);
+
+    if (!activityContainer || isPointerInElement(event, activityContainer)) {
+      return;
+    }
+
+    lastUserActivityAt = 0;
     updateEndTime();
   }
 
   function hasRecentUserActivity() {
-    return Date.now() - lastUserActivityAt < CONTROL_VISIBILITY_WINDOW_MS;
+    const adapter = getActiveAdapter();
+    const visibilityWindowMs = adapter?.controlVisibilityWindowMs || CONTROL_VISIBILITY_WINDOW_MS;
+
+    return Date.now() - lastUserActivityAt < visibilityWindowMs;
   }
 
   function isDebugEnabled() {
@@ -91,6 +163,20 @@
       const element = document.querySelector(selector);
 
       if (isVisibleElement(element)) {
+        return element;
+      }
+    }
+
+    return null;
+  }
+
+  function findFirstVisibleDeep(selectors) {
+    const elements = getSearchElements();
+
+    for (const selector of selectors) {
+      const element = elements.find((candidate) => candidate.matches?.(selector) && isVisibleElement(candidate));
+
+      if (element) {
         return element;
       }
     }
@@ -252,6 +338,17 @@
     );
   }
 
+  function isBottomLeftClockRect(rect, viewportWidth, viewportHeight) {
+    return (
+      rect.width > 0 &&
+      rect.height > 0 &&
+      rect.width <= 220 &&
+      rect.height <= 100 &&
+      rect.top > viewportHeight * 0.55 &&
+      rect.left < viewportWidth * 0.35
+    );
+  }
+
   function findBottomRightTimeCandidate() {
     const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
@@ -304,6 +401,72 @@
 
   function findBottomRightTimeDisplay() {
     return findBottomRightTimeCandidate()?.element || null;
+  }
+
+  function findBottomLeftTimeDisplay() {
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    const elements = getSearchElements();
+    const candidates = [];
+
+    elements.forEach((element) => {
+      if (isOwnElement(element) || !isVisibleElement(element)) {
+        return;
+      }
+
+      const text = getClockText(element) || getAttributeClockText(element);
+
+      if (!text) {
+        return;
+      }
+
+      const rect = element.getBoundingClientRect();
+
+      if (isBottomLeftClockRect(rect, viewportWidth, viewportHeight)) {
+        candidates.push({ element, rect });
+      }
+    });
+
+    return candidates
+      .sort((first, second) => {
+        const firstArea = first.rect.width * first.rect.height;
+        const secondArea = second.rect.width * second.rect.height;
+
+        return second.rect.bottom - first.rect.bottom || first.rect.left - second.rect.left || firstArea - secondArea;
+      })[0]?.element || null;
+  }
+
+  function getVisibleBottomClockDurations() {
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    const seen = new Set();
+    const durations = [];
+
+    getSearchElements().forEach((element) => {
+      if (isOwnElement(element) || !isVisibleElement(element)) {
+        return;
+      }
+
+      const text = getClockText(element) || getAttributeClockText(element);
+
+      if (!text || seen.has(text)) {
+        return;
+      }
+
+      const rect = element.getBoundingClientRect();
+
+      if (rect.top <= viewportHeight * 0.5) {
+        return;
+      }
+
+      const duration = parseClockText(text);
+
+      if (Number.isFinite(duration)) {
+        seen.add(text);
+        durations.push(duration);
+      }
+    });
+
+    return durations;
   }
 
   function getBottomRightDuration() {
@@ -412,6 +575,106 @@
     }
 
     return progressElement.parentElement || progressElement;
+  }
+
+  function findCommonPlayerAnchor(extraSelectors = []) {
+    const timeDisplay = findSlashTimeDisplay();
+
+    if (timeDisplay) {
+      return timeDisplay;
+    }
+
+    return findFirstVisibleDeep([
+      ...extraSelectors,
+      ".vjs-control-bar",
+      ".jw-controlbar",
+      ".plyr__controls",
+      ".media-control",
+      '[class*="control-bar"]',
+      '[class*="ControlBar"]',
+      '[class*="player-controls"]',
+      '[class*="PlayerControls"]'
+    ]) || findBottomProgressAnchor();
+  }
+
+  function renderInlinePlayerPlacement(element, platformId, anchor) {
+    if (!anchor) {
+      return false;
+    }
+
+    element.dataset.platform = platformId;
+
+    const anchorText = getDirectText(anchor) || (anchor.textContent || "").trim();
+
+    if (isSlashTimeText(anchorText) || isSingleTimeText(anchorText)) {
+      element.dataset.placement = "time";
+
+      if (element.parentElement !== anchor.parentElement || element.previousElementSibling !== anchor) {
+        anchor.insertAdjacentElement("afterend", element);
+      }
+
+      return true;
+    }
+
+    element.dataset.placement = "controls";
+    anchor.classList.add("watch-end-time-anchor");
+
+    if (element.parentElement !== anchor) {
+      anchor.appendChild(element);
+    }
+
+    return true;
+  }
+
+  function renderCenteredOverlayPlacement(element, platformId, video, root = getOverlayRoot(video)) {
+    const overlayRoot = root;
+
+    element.dataset.platform = platformId;
+    element.dataset.placement = "centerOverlay";
+    overlayRoot.classList.add("watch-end-time-anchor");
+
+    if (element.parentElement !== overlayRoot) {
+      overlayRoot.appendChild(element);
+    }
+
+    return true;
+  }
+
+  function findTwitchVideoContainer(video) {
+    if (document.fullscreenElement && document.fullscreenElement !== video) {
+      return document.fullscreenElement;
+    }
+
+    const selectors = [
+      '[data-a-target="video-player"]',
+      '[data-a-target="player-overlay-click-handler"]',
+      '[data-test-selector="video-player__video-container"]',
+      ".video-player",
+      ".persistent-player",
+      '[class*="video-player"]',
+      '[class*="persistent-player"]'
+    ];
+
+    let current = video?.parentElement || null;
+    let best = null;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+    while (current && current !== document.body) {
+      if (selectors.some((selector) => current.matches?.(selector)) && isVisibleElement(current)) {
+        return current;
+      }
+
+      const rect = current.getBoundingClientRect();
+
+      if (isVisibleElement(current) && rect.width > viewportWidth * 0.45 && rect.height > viewportHeight * 0.3) {
+        best = current;
+      }
+
+      current = current.parentElement;
+    }
+
+    return best;
   }
 
   function findVideoContainer(video) {
@@ -528,7 +791,7 @@
       return { label: "", isActive: false, isVisible: false };
     }
 
-    const adapterDuration = adapter?.getDuration?.();
+    const adapterDuration = adapter?.getDuration?.(video);
     const duration = Number.isFinite(adapterDuration) && adapterDuration > 0 ? adapterDuration : getFiniteDuration(video);
 
     if (!Number.isFinite(duration) || duration <= 0) {
@@ -820,11 +1083,146 @@
     }
   };
 
+  const vimeoAdapter = {
+    id: "vimeo",
+
+    matchesHost(hostname) {
+      return matchesDomain(hostname, ["vimeo.com"]);
+    },
+
+    findVideo() {
+      return findPlayableVideo() || findBestVideo();
+    },
+
+    findAnchor() {
+      return findCommonPlayerAnchor([
+        ".vp-controls",
+        ".vp-controls-wrapper",
+        '[data-testid*="controls"]',
+        '[class*="Controls_module_controls"]',
+        '[class*="vp-controls"]'
+      ]);
+    },
+
+    renderPlacement(element) {
+      return renderInlinePlayerPlacement(element, this.id, this.findAnchor());
+    }
+  };
+
+  const dailymotionAdapter = {
+    id: "dailymotion",
+
+    matchesHost(hostname) {
+      return matchesDomain(hostname, ["dailymotion.com", "dai.ly"]);
+    },
+
+    findVideo() {
+      return findPlayableVideo() || findBestVideo();
+    },
+
+    findAnchor() {
+      return findCommonPlayerAnchor([
+        '[class*="VideoControls"]',
+        '[class*="videoControls"]',
+        '[class*="PlayerControls"]',
+        '[class*="playerControls"]'
+      ]);
+    },
+
+    renderPlacement(element) {
+      const video = this.findVideo();
+
+      if (!video) {
+        return false;
+      }
+
+      const videoContainer = findTwitchVideoContainer(video);
+
+      if (!videoContainer) {
+        return false;
+      }
+
+      return renderCenteredOverlayPlacement(element, this.id, video, videoContainer);
+    }
+  };
+
+  const twitchAdapter = {
+    id: "twitch",
+    hideWhenControlsInactive: true,
+    controlVisibilityWindowMs: 4000,
+    lastDuration: NaN,
+
+    matchesHost(hostname) {
+      return matchesDomain(hostname, ["twitch.tv"]);
+    },
+
+    findVideo() {
+      return findBestVideo() || findPlayableVideo();
+    },
+
+    isLive() {
+      if (location.pathname.includes("/videos/") || location.hostname.startsWith("clips.")) {
+        return false;
+      }
+
+      const liveBadge = document.querySelector('[data-a-target="player-live-badge"]');
+
+      return Boolean(liveBadge && isVisibleElement(liveBadge));
+    },
+
+    findAnchor() {
+      return findBottomLeftTimeDisplay() || findCommonPlayerAnchor([
+        '[data-a-target="player-controls"]',
+        '[data-a-target="player-seekbar"]',
+        '[data-a-target="player-overlay-click-handler"]',
+        ".player-controls",
+        '[class*="player-controls"]'
+      ]);
+    },
+
+    getDuration(video) {
+      const currentTime = video?.currentTime || 0;
+      const visibleDurations = getVisibleBottomClockDurations()
+        .filter((duration) => duration > currentTime + 5)
+        .sort((first, second) => second - first);
+
+      if (visibleDurations[0]) {
+        this.lastDuration = visibleDurations[0];
+        return this.lastDuration;
+      }
+
+      if (Number.isFinite(this.lastDuration) && this.lastDuration > currentTime + 5) {
+        return this.lastDuration;
+      }
+
+      return NaN;
+    },
+
+    renderPlacement(element) {
+      const video = this.findVideo();
+
+      if (!video) {
+        return false;
+      }
+
+      const videoContainer = findTwitchVideoContainer(video);
+
+      if (!videoContainer) {
+        return false;
+      }
+
+      return renderCenteredOverlayPlacement(element, this.id, video, videoContainer);
+    }
+  };
+
   const platformAdapters = [
     youtubeAdapter,
     netflixAdapter,
     primeVideoAdapter,
-    disneyPlusAdapter
+    disneyPlusAdapter,
+    vimeoAdapter,
+    dailymotionAdapter,
+    twitchAdapter
   ];
 
   function getActiveAdapter() {
@@ -835,8 +1233,14 @@
     return getActiveAdapter()?.findVideo() || null;
   }
 
-  function getOverlayRoot() {
-    return document.fullscreenElement || document.body;
+  function getOverlayRoot(video = null) {
+    const fullscreenElement = document.fullscreenElement;
+
+    if (fullscreenElement && fullscreenElement.tagName !== "VIDEO") {
+      return fullscreenElement;
+    }
+
+    return findVideoContainer(video) || document.body;
   }
 
   function removeDuplicateDisplays(keepElement = null) {
@@ -957,10 +1361,39 @@
     }
   }
 
+  function scheduleSync(delayMs) {
+    const timer = window.setTimeout(() => {
+      fullscreenRetryTimers.delete(timer);
+      sync();
+    }, delayMs);
+
+    fullscreenRetryTimers.add(timer);
+  }
+
+  function handleFullscreenChange() {
+    if (displayElement) {
+      displayElement.remove();
+      displayElement = null;
+    }
+
+    lastUserActivityAt = Date.now();
+    sync();
+    scheduleSync(250);
+    scheduleSync(1000);
+  }
+
   function cleanup() {
     if (updateTimer) {
       window.clearInterval(updateTimer);
       updateTimer = null;
+    }
+
+    fullscreenRetryTimers.forEach((timer) => window.clearTimeout(timer));
+    fullscreenRetryTimers.clear();
+
+    if (activityUpdateFrame) {
+      window.cancelAnimationFrame(activityUpdateFrame);
+      activityUpdateFrame = null;
     }
 
     if (activeVideo) {
@@ -976,11 +1409,12 @@
     window.removeEventListener("popstate", start);
     window.removeEventListener("pageshow", start);
     window.removeEventListener("mousemove", markUserActivity);
+    window.removeEventListener("mouseout", handlePointerOut);
     window.removeEventListener("mousedown", markUserActivity);
     window.removeEventListener("touchstart", markUserActivity);
     window.removeEventListener("keydown", markUserActivity);
     document.removeEventListener("visibilitychange", start);
-    document.removeEventListener("fullscreenchange", start);
+    document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }
 
   window[INSTANCE_CLEANUP_KEY] = cleanup;
@@ -991,9 +1425,10 @@
   window.addEventListener("popstate", start);
   window.addEventListener("pageshow", start);
   window.addEventListener("mousemove", markUserActivity, { passive: true });
+  window.addEventListener("mouseout", handlePointerOut, { passive: true });
   window.addEventListener("mousedown", markUserActivity, { passive: true });
   window.addEventListener("touchstart", markUserActivity, { passive: true });
   window.addEventListener("keydown", markUserActivity);
   document.addEventListener("visibilitychange", start);
-  document.addEventListener("fullscreenchange", start);
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
 })();
