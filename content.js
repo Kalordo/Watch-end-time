@@ -1,6 +1,9 @@
 (() => {
   const DISPLAY_ID = "watch-end-time-display";
+  const DEBUG_ID = "watch-end-time-debug";
   const UPDATE_INTERVAL_MS = 1000;
+  const CONTROL_VISIBILITY_WINDOW_MS = 3000;
+  const INSTANCE_CLEANUP_KEY = "__watchEndTimeCleanup";
   const VIDEO_EVENTS = [
     "durationchange",
     "emptied",
@@ -17,6 +20,31 @@
   let displayElement = null;
   let updateTimer = null;
   let activeVideo = null;
+  let lastUserActivityAt = Date.now();
+
+  if (window.top !== window) {
+    document.getElementById(DISPLAY_ID)?.remove();
+    return;
+  }
+
+  window[INSTANCE_CLEANUP_KEY]?.();
+
+  function markUserActivity() {
+    lastUserActivityAt = Date.now();
+    updateEndTime();
+  }
+
+  function hasRecentUserActivity() {
+    return Date.now() - lastUserActivityAt < CONTROL_VISIBILITY_WINDOW_MS;
+  }
+
+  function isDebugEnabled() {
+    try {
+      return localStorage.getItem("watchEndTimeDebug") === "1" || location.search.includes("watchEndTimeDebug=1");
+    } catch (_) {
+      return location.search.includes("watchEndTimeDebug=1");
+    }
+  }
 
   function isVisibleVideo(video) {
     const rect = video.getBoundingClientRect();
@@ -48,6 +76,12 @@
       })[0] || null;
   }
 
+  function findPlayableVideo() {
+    const videos = [...document.querySelectorAll("video")];
+
+    return videos.find((video) => Number.isFinite(video.duration) && video.duration > 0) || videos[0] || null;
+  }
+
   function matchesDomain(hostname, domains) {
     return domains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`));
   }
@@ -64,7 +98,19 @@
     return null;
   }
 
+  function getDirectText(element) {
+    return [...element.childNodes]
+      .filter((node) => node.nodeType === Node.TEXT_NODE)
+      .map((node) => node.textContent || "")
+      .join(" ")
+      .trim();
+  }
+
   function isPrimeTimeText(text) {
+    return /^\d{1,2}:\d{2}(?::\d{2})?\s*\/\s*\d{1,2}:\d{2}(?::\d{2})?$/.test(text.trim());
+  }
+
+  function isSlashTimeText(text) {
     return /^\d{1,2}:\d{2}(?::\d{2})?\s*\/\s*\d{1,2}:\d{2}(?::\d{2})?$/.test(text.trim());
   }
 
@@ -81,12 +127,372 @@
       })[0] || null;
   }
 
+  function findSlashTimeDisplay() {
+    const elements = [...document.querySelectorAll("span, div, time")];
+
+    return elements
+      .filter((element) => isVisibleElement(element) && isSlashTimeText(element.textContent || ""))
+      .sort((first, second) => {
+        const firstRect = first.getBoundingClientRect();
+        const secondRect = second.getBoundingClientRect();
+
+        return secondRect.top - firstRect.top || firstRect.left - secondRect.left;
+      })[0] || null;
+  }
+
+  function isSingleTimeText(text) {
+    return /^\d{1,2}:\d{2}(?::\d{2})?$/.test(text.trim());
+  }
+
+  function parseClockText(text) {
+    const clockText = extractClockText(text);
+
+    if (!clockText) {
+      return NaN;
+    }
+
+    const parts = clockText.split(":").map((part) => Number.parseInt(part, 10));
+
+    if (parts.some((part) => Number.isNaN(part))) {
+      return NaN;
+    }
+
+    if (parts.length === 2) {
+      return parts[0] * 60 + parts[1];
+    }
+
+    if (parts.length === 3) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
+
+    return NaN;
+  }
+
+  function extractClockText(text) {
+    const normalizedText = text.replace(/[\u200e\u200f\u202a-\u202e]/g, "").trim();
+    const matches = normalizedText.match(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g);
+
+    return matches?.[matches.length - 1] || "";
+  }
+
+  function getSearchElements() {
+    const elements = [];
+
+    function collect(root) {
+      const rootElements = [...root.querySelectorAll("*")];
+
+      rootElements.forEach((element) => {
+        elements.push(element);
+
+        if (element.shadowRoot) {
+          collect(element.shadowRoot);
+        }
+      });
+    }
+
+    collect(document);
+
+    return elements;
+  }
+
+  function forEachSearchTextNode(callback) {
+    function walk(root) {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      let node = walker.nextNode();
+
+      while (node) {
+        callback(node);
+        node = walker.nextNode();
+      }
+
+      [...root.querySelectorAll("*")].forEach((element) => {
+        if (element.shadowRoot) {
+          walk(element.shadowRoot);
+        }
+      });
+    }
+
+    walk(document);
+  }
+
+  function getClockText(element) {
+    const text = getDirectText(element) || (element.textContent || "").trim();
+
+    return extractClockText(text);
+  }
+
+  function getAttributeClockText(element) {
+    const attributes = ["aria-label", "aria-valuetext", "aria-description", "title"];
+
+    for (const attribute of attributes) {
+      const value = element.getAttribute(attribute) || "";
+      const text = extractClockText(value);
+
+      if (text) {
+        return text;
+      }
+    }
+
+    return "";
+  }
+
+  function isOwnElement(element) {
+    return Boolean(element?.id === DISPLAY_ID || element?.id === DEBUG_ID || element?.closest?.(`#${DISPLAY_ID}, #${DEBUG_ID}`));
+  }
+
+  function isRightSideClockRect(rect, viewportWidth, viewportHeight) {
+    return (
+      rect.width > 0 &&
+      rect.height > 0 &&
+      rect.width <= 220 &&
+      rect.height <= 100 &&
+      rect.top >= 0 &&
+      rect.bottom <= viewportHeight &&
+      rect.right > viewportWidth * 0.55
+    );
+  }
+
+  function findBottomRightTimeCandidate() {
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    const elements = getSearchElements();
+    const candidates = [];
+
+    elements.forEach((element) => {
+      if (isOwnElement(element) || !isVisibleElement(element)) {
+        return;
+      }
+
+      const text = getClockText(element) || getAttributeClockText(element);
+
+      if (!text) {
+        return;
+      }
+
+      const rect = element.getBoundingClientRect();
+
+      if (isRightSideClockRect(rect, viewportWidth, viewportHeight)) {
+        candidates.push({ element, rect, text });
+      }
+    });
+
+    forEachSearchTextNode((node) => {
+      const text = extractClockText(node.textContent || "");
+      const element = node.parentElement;
+
+      if (text && element && !isOwnElement(element) && isVisibleElement(element)) {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+
+        const rect = range.getBoundingClientRect();
+        range.detach();
+
+        if (isRightSideClockRect(rect, viewportWidth, viewportHeight)) {
+          candidates.push({ element, rect, text });
+        }
+      }
+    });
+
+    return candidates
+      .sort((first, second) => {
+        const firstArea = first.rect.width * first.rect.height;
+        const secondArea = second.rect.width * second.rect.height;
+
+        return second.rect.right - first.rect.right || second.rect.bottom - first.rect.bottom || firstArea - secondArea;
+      })[0] || null;
+  }
+
+  function findBottomRightTimeDisplay() {
+    return findBottomRightTimeCandidate()?.element || null;
+  }
+
+  function getBottomRightDuration() {
+    const candidate = findBottomRightTimeCandidate();
+
+    if (!candidate) {
+      return NaN;
+    }
+
+    return parseClockText(candidate.text);
+  }
+
+  function readNumericAttribute(element, attributes) {
+    for (const attribute of attributes) {
+      const value = Number.parseFloat(element.getAttribute(attribute) || "");
+
+      if (Number.isFinite(value)) {
+        return value;
+      }
+    }
+
+    return NaN;
+  }
+
+  function getRemainingFromProgressControl() {
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    const controls = getSearchElements()
+      .filter((element) => {
+        if (isOwnElement(element) || !isVisibleElement(element)) {
+          return false;
+        }
+
+        const rect = element.getBoundingClientRect();
+
+        return (
+          rect.top > viewportHeight * 0.35 &&
+          rect.width > viewportWidth * 0.35 &&
+          (
+            element.matches('[role="slider"], input[type="range"], progress') ||
+            element.hasAttribute("aria-valuenow") ||
+            element.hasAttribute("aria-valuemax")
+          )
+        );
+      })
+      .sort((first, second) => {
+        const firstRect = first.getBoundingClientRect();
+        const secondRect = second.getBoundingClientRect();
+
+        return secondRect.width - firstRect.width || secondRect.top - firstRect.top;
+      });
+
+    for (const control of controls) {
+      const current = readNumericAttribute(control, ["aria-valuenow", "value"]);
+      const total = readNumericAttribute(control, ["aria-valuemax", "max"]);
+
+      if (Number.isFinite(current) && Number.isFinite(total) && total > 300 && current >= 0 && current < total) {
+        return total - current;
+      }
+    }
+
+    return NaN;
+  }
+
+  function findBottomProgressAnchor() {
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    const elements = [
+      ...document.querySelectorAll([
+        '[role="slider"]',
+        '[aria-valuemin][aria-valuemax]',
+        "progress",
+        'input[type="range"]',
+        '[class*="progress"]',
+        '[class*="Progress"]',
+        '[class*="scrubber"]',
+        '[class*="Scrubber"]',
+        '[class*="seek"]',
+        '[class*="Seek"]',
+        '[class*="timeline"]',
+        '[class*="Timeline"]',
+        '[class*="slider"]',
+        '[class*="Slider"]'
+      ].join(","))
+    ];
+
+    const progressElement = elements
+      .filter((element) => {
+        if (!isVisibleElement(element)) {
+          return false;
+        }
+
+        const rect = element.getBoundingClientRect();
+
+        return rect.top > viewportHeight * 0.65 && rect.width > viewportWidth * 0.35;
+      })
+      .sort((first, second) => {
+        const firstRect = first.getBoundingClientRect();
+        const secondRect = second.getBoundingClientRect();
+
+        return secondRect.width - firstRect.width || secondRect.top - firstRect.top;
+      })[0];
+
+    if (!progressElement) {
+      return null;
+    }
+
+    return progressElement.parentElement || progressElement;
+  }
+
+  function findVideoContainer(video) {
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    let current = video?.parentElement || null;
+    let best = null;
+
+    while (current && current !== document.body) {
+      const rect = current.getBoundingClientRect();
+
+      if (isVisibleElement(current) && rect.width >= viewportWidth * 0.7 && rect.height >= viewportHeight * 0.7) {
+        best = current;
+      }
+
+      current = current.parentElement;
+    }
+
+    if (best) {
+      return best;
+    }
+
+    const candidates = [
+      document.fullscreenElement,
+      ...document.querySelectorAll([
+        '[data-testid*="player"]',
+        '[data-testid*="Player"]',
+        '[class*="player"]',
+        '[class*="Player"]',
+        '[class*="video"]',
+        '[class*="Video"]',
+        "#app"
+      ].join(","))
+    ].filter(Boolean);
+
+    return candidates
+      .filter((element) => {
+        if (!isVisibleElement(element)) {
+          return false;
+        }
+
+        const rect = element.getBoundingClientRect();
+
+        return rect.width >= viewportWidth * 0.7 && rect.height >= viewportHeight * 0.7;
+      })
+      .sort((first, second) => {
+        const firstRect = first.getBoundingClientRect();
+        const secondRect = second.getBoundingClientRect();
+
+        return (secondRect.width * secondRect.height) - (firstRect.width * firstRect.height);
+      })[0] || null;
+  }
+
   function formatClock(date) {
     return new Intl.DateTimeFormat(undefined, {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit"
     }).format(date);
+  }
+
+  function getFiniteDuration(video) {
+    if (Number.isFinite(video.duration) && video.duration > 0) {
+      return video.duration;
+    }
+
+    const seekable = video.seekable;
+
+    if (!seekable || seekable.length === 0) {
+      return NaN;
+    }
+
+    for (let index = seekable.length - 1; index >= 0; index -= 1) {
+      const end = seekable.end(index);
+
+      if (Number.isFinite(end) && end > video.currentTime) {
+        return end;
+      }
+    }
+
+    return NaN;
   }
 
   function getEndTimeState(video, adapter) {
@@ -98,22 +504,52 @@
       return { label: "", isActive: false, isVisible: false };
     }
 
-    if (!Number.isFinite(video.duration) || video.duration <= 0) {
+    if (adapter?.hideWhenControlsInactive && !hasRecentUserActivity()) {
       return { label: "", isActive: false, isVisible: false };
     }
 
-    if (video.ended || video.currentTime >= video.duration) {
+    const playbackRate = video.playbackRate || 1;
+    const adapterRemainingSeconds = adapter?.getRemainingSeconds?.();
+
+    if (Number.isFinite(adapterRemainingSeconds) && adapterRemainingSeconds >= 0) {
+      if (video.ended || adapterRemainingSeconds === 0) {
+        return { label: "Terminé", isActive: false };
+      }
+
+      const endDate = new Date(Date.now() + (adapterRemainingSeconds / playbackRate) * 1000);
+
+      return {
+        label: `Fin ${formatClock(endDate)}`,
+        isActive: !video.paused
+      };
+    }
+
+    if (adapter?.requiresVisibleRemainingTime) {
+      return { label: "", isActive: false, isVisible: false };
+    }
+
+    const adapterDuration = adapter?.getDuration?.();
+    const duration = Number.isFinite(adapterDuration) && adapterDuration > 0 ? adapterDuration : getFiniteDuration(video);
+
+    if (!Number.isFinite(duration) || duration <= 0) {
+      return { label: "", isActive: false, isVisible: false };
+    }
+
+    if (video.ended || video.currentTime >= duration) {
       return { label: "Terminé", isActive: false };
     }
 
-    const playbackRate = video.playbackRate || 1;
-    const remainingSeconds = Math.max(video.duration - video.currentTime, 0) / playbackRate;
+    const remainingSeconds = Math.max(duration - video.currentTime, 0) / playbackRate;
     const endDate = new Date(Date.now() + remainingSeconds * 1000);
 
     return {
       label: `Fin ${formatClock(endDate)}`,
       isActive: !video.paused
     };
+  }
+
+  function renderDebug(adapter) {
+    document.getElementById(DEBUG_ID)?.remove();
   }
 
   const youtubeAdapter = {
@@ -173,7 +609,7 @@
     },
 
     findVideo() {
-      return findBestVideo();
+      return findPlayableVideo() || findBestVideo();
     },
 
     findAnchor() {
@@ -235,7 +671,7 @@
     },
 
     findVideo() {
-      return findBestVideo();
+      return findPlayableVideo() || findBestVideo();
     },
 
     findAnchor() {
@@ -282,10 +718,113 @@
     }
   };
 
+  const disneyPlusAdapter = {
+    id: "disneyPlus",
+    requiresVisibleRemainingTime: true,
+    hideWhenControlsInactive: true,
+
+    matchesHost(hostname) {
+      return matchesDomain(hostname, ["disneyplus.com", "bamgrid.com", "disney-plus.net"]);
+    },
+
+    findVideo() {
+      return findBestVideo();
+    },
+
+    findAnchor() {
+      const footerAnchor = findFirstVisible([
+        ".controls__footer",
+        '[class*="controls__footer"]'
+      ]);
+      const controlsAnchor = findSlashTimeDisplay() || findBottomRightTimeDisplay() || footerAnchor || findBottomProgressAnchor();
+
+      if (controlsAnchor) {
+        return controlsAnchor;
+      }
+
+      if (!hasRecentUserActivity()) {
+        return null;
+      }
+
+      return findVideoContainer(this.findVideo()) || document.body;
+    },
+
+    getDuration() {
+      return NaN;
+    },
+
+    getRemainingSeconds() {
+      const visibleRemaining = getBottomRightDuration();
+
+      if (Number.isFinite(visibleRemaining)) {
+        return visibleRemaining;
+      }
+
+      return getRemainingFromProgressControl();
+    },
+
+    renderPlacement(element) {
+      const anchor = this.findAnchor();
+
+      if (!anchor) {
+        return false;
+      }
+
+      element.dataset.platform = this.id;
+
+      const anchorText = getDirectText(anchor) || (anchor.textContent || "").trim();
+
+      if (anchor.classList.contains("controls__footer") || String(anchor.className || "").includes("controls__footer")) {
+        element.dataset.placement = "footer";
+        anchor.classList.add("watch-end-time-anchor");
+
+        if (element.parentElement !== anchor) {
+          anchor.appendChild(element);
+        }
+
+        return true;
+      }
+
+      if (isSlashTimeText(anchorText) || isSingleTimeText(anchorText)) {
+        element.dataset.placement = "time";
+
+        const overlayRoot = getOverlayRoot();
+
+        if (element.parentElement !== overlayRoot) {
+          overlayRoot.appendChild(element);
+        }
+
+        return true;
+      }
+
+      if (anchor === document.body) {
+        element.dataset.placement = "viewport";
+
+        const overlayRoot = getOverlayRoot();
+
+        if (element.parentElement !== overlayRoot) {
+          overlayRoot.appendChild(element);
+        }
+
+        return true;
+      }
+
+      element.dataset.placement = "progress";
+      anchor.classList.add("watch-end-time-anchor");
+
+      if (element.parentElement !== anchor) {
+        anchor.appendChild(element);
+      }
+
+      return true;
+    }
+  };
+
   const platformAdapters = [
     youtubeAdapter,
     netflixAdapter,
-    primeVideoAdapter
+    primeVideoAdapter,
+    disneyPlusAdapter
   ];
 
   function getActiveAdapter() {
@@ -296,13 +835,33 @@
     return getActiveAdapter()?.findVideo() || null;
   }
 
+  function getOverlayRoot() {
+    return document.fullscreenElement || document.body;
+  }
+
+  function removeDuplicateDisplays(keepElement = null) {
+    const displays = new Set([
+      ...document.querySelectorAll(`#${DISPLAY_ID}`),
+      ...getSearchElements().filter((element) => element.id === DISPLAY_ID)
+    ]);
+
+    displays.forEach((element) => {
+      if (element !== keepElement) {
+        element.remove();
+      }
+    });
+  }
+
   function createDisplay() {
+    removeDuplicateDisplays();
+
     const element = document.createElement("span");
     element.id = DISPLAY_ID;
     element.className = "watch-end-time-display";
     element.dataset.state = "inactive";
     element.title = "Heure estimée de fin, ajustée à la vitesse de lecture";
-    element.textContent = "Fin --:--:--";
+    element.textContent = "";
+    element.hidden = true;
     return element;
   }
 
@@ -313,13 +872,16 @@
       return false;
     }
 
-    if (!displayElement || !document.contains(displayElement)) {
+    if (!displayElement || !displayElement.isConnected) {
       displayElement = createDisplay();
     }
+
+    removeDuplicateDisplays(displayElement);
 
     const wasPlaced = adapter.renderPlacement(displayElement);
 
     if (!wasPlaced) {
+      displayElement.remove();
       displayElement.hidden = true;
     }
 
@@ -327,15 +889,20 @@
   }
 
   function renderState(state) {
+    if (state.isVisible === false || !state.label) {
+      if (displayElement) {
+        displayElement.remove();
+        displayElement.hidden = true;
+      }
+
+      return;
+    }
+
     if (!attachDisplay()) {
       return;
     }
 
-    displayElement.hidden = state.isVisible === false;
-
-    if (displayElement.hidden) {
-      return;
-    }
+    displayElement.hidden = false;
 
     if (displayElement.textContent !== state.label) {
       displayElement.textContent = state.label;
@@ -351,20 +918,27 @@
   }
 
   function sync() {
-    const video = getCurrentVideo();
+    const adapter = getActiveAdapter();
+    const video = adapter?.findVideo() || null;
 
-    attachDisplay();
+    renderDebug(adapter);
 
     if (video) {
       bindVideoEvents(video);
     }
 
-    updateEndTime();
+    renderState(getEndTimeState(video, adapter));
   }
 
   function bindVideoEvents(video) {
     if (!video || activeVideo === video) {
       return;
+    }
+
+    if (activeVideo) {
+      VIDEO_EVENTS.forEach((eventName) => {
+        activeVideo.removeEventListener(eventName, updateEndTime);
+      });
     }
 
     activeVideo = video;
@@ -375,6 +949,7 @@
   }
 
   function start() {
+    removeDuplicateDisplays(displayElement);
     sync();
 
     if (!updateTimer) {
@@ -382,10 +957,43 @@
     }
   }
 
+  function cleanup() {
+    if (updateTimer) {
+      window.clearInterval(updateTimer);
+      updateTimer = null;
+    }
+
+    if (activeVideo) {
+      VIDEO_EVENTS.forEach((eventName) => {
+        activeVideo.removeEventListener(eventName, updateEndTime);
+      });
+      activeVideo = null;
+    }
+
+    removeDuplicateDisplays();
+    document.getElementById(DEBUG_ID)?.remove();
+    window.removeEventListener("yt-navigate-finish", start);
+    window.removeEventListener("popstate", start);
+    window.removeEventListener("pageshow", start);
+    window.removeEventListener("mousemove", markUserActivity);
+    window.removeEventListener("mousedown", markUserActivity);
+    window.removeEventListener("touchstart", markUserActivity);
+    window.removeEventListener("keydown", markUserActivity);
+    document.removeEventListener("visibilitychange", start);
+    document.removeEventListener("fullscreenchange", start);
+  }
+
+  window[INSTANCE_CLEANUP_KEY] = cleanup;
+
   start();
 
   window.addEventListener("yt-navigate-finish", start);
   window.addEventListener("popstate", start);
   window.addEventListener("pageshow", start);
+  window.addEventListener("mousemove", markUserActivity, { passive: true });
+  window.addEventListener("mousedown", markUserActivity, { passive: true });
+  window.addEventListener("touchstart", markUserActivity, { passive: true });
+  window.addEventListener("keydown", markUserActivity);
   document.addEventListener("visibilitychange", start);
+  document.addEventListener("fullscreenchange", start);
 })();

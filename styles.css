@@ -1,8 +1,8 @@
 #watch-end-time-display {
+  display: none;
   position: relative;
   top: 50%;
   float: left;
-  display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
@@ -23,6 +23,10 @@
   pointer-events: none;
   transform: translateY(-50%);
   transition: opacity 0.1s linear;
+}
+
+#watch-end-time-display:not([hidden]) {
+  display: inline-flex;
 }
 
 #watch-end-time-display[data-state="inactive"] {
@@ -85,4 +89,93 @@
   text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
   transform: none;
   vertical-align: baseline;
+}
+
+#watch-end-time-display[data-platform="disneyPlus"] {
+  position: static;
+  top: auto;
+  display: inline-flex;
+  float: none;
+  width: auto;
+  height: auto;
+  margin: 0 12px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: rgb(249 249 249 / 78%);
+  font-family: Avenir, "Avenir Next", Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
+  transform: none;
+  vertical-align: baseline;
+}
+
+#watch-end-time-display[data-platform="disneyPlus"][data-placement="time"] {
+  position: fixed;
+  left: 50%;
+  bottom: 56px;
+  margin: 0;
+  padding: 3px 9px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 10%);
+  color: rgb(249 249 249 / 86%);
+  transform: translateX(-50%);
+  z-index: 2147483647;
+}
+
+#watch-end-time-display[data-platform="disneyPlus"][data-placement="footer"] {
+  position: absolute;
+  right: 34px;
+  bottom: 24px;
+  margin: 0;
+  padding: 0;
+  color: rgb(249 249 249 / 78%);
+  z-index: 2;
+}
+
+.watch-end-time-anchor {
+  position: relative !important;
+}
+
+#watch-end-time-display[data-platform="disneyPlus"][data-placement="progress"] {
+  position: absolute;
+  right: 48px;
+  bottom: 48px;
+  margin: 0;
+  padding: 0;
+  color: rgb(255 255 255 / 76%);
+  z-index: 2147483647;
+}
+
+#watch-end-time-display[data-platform="disneyPlus"][data-placement="viewport"] {
+  position: fixed;
+  right: 48px;
+  bottom: 44px;
+  margin: 0;
+  padding: 0;
+  color: rgb(255 255 255 / 76%);
+  z-index: 2147483647;
+}
+
+#watch-end-time-display[hidden] {
+  display: none !important;
+}
+
+#watch-end-time-debug {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2147483647;
+  max-width: 360px;
+  padding: 12px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 86%);
+  color: #fff;
+  font: 12px/1.35 Consolas, monospace;
+  pointer-events: none;
+  white-space: pre-wrap;
 }

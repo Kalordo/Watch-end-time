@@ -20,6 +20,6 @@ heure de fin = maintenant + (duree totale - temps courant) / vitesse de lecture
 - `youtube` : integration native dans les controles du lecteur.
 - `netflix` : integration dans les controles du lecteur si un ancrage fiable est detecte.
 - `primeVideo` : integration dans les controles du lecteur si un ancrage fiable est detecte.
-- `disneyPlus` : a venir, integration native uniquement.
+- `disneyPlus` : integration dans les controles du lecteur si un ancrage fiable est detecte.
 
 Si un adaptateur ne trouve pas d'ancrage propre dans les controles du lecteur, il ne doit rien afficher. Les badges flottants globaux sont volontairement evites.

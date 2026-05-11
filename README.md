@@ -1,6 +1,6 @@
 # Watch End Time
 
-Extension Chrome/Edge qui affiche l'heure estimee de fin dans les controles des lecteurs YouTube, Netflix et Prime Video.
+Extension Chrome/Edge qui affiche l'heure estimee de fin dans les controles des lecteurs YouTube, Netflix, Prime Video et Disney+.
 
 Le badge tient compte de la duree restante, de l'heure locale et de la vitesse de lecture.
 
@@ -19,13 +19,14 @@ Createur : 3Devs.
 - Affichage `Fin HH:MM:SS` integre dans les controles YouTube.
 - Integration Netflix dans les controles du lecteur quand une zone de controle fiable est detectee.
 - Integration Prime Video/Amazon Video dans les controles du lecteur quand une zone de controle fiable est detectee.
+- Integration Disney+ dans les controles du lecteur quand une zone de controle fiable est detectee.
 - Mise a jour pendant la lecture, apres pause/reprise, seek et changement de vitesse.
 - Detection des videos terminees et des lives sans duree fiable.
 - Aucune permission sensible et aucune collecte de donnees.
 
 ## Compatibilite
 
-YouTube garde une integration native dans le lecteur. Netflix et Prime Video utilisent aussi une integration dans les controles du lecteur quand l'interface expose un ancrage fiable. Disney+ et les lecteurs HTML5 generiques sont prevus pour plus tard.
+YouTube garde une integration native dans le lecteur. Netflix, Prime Video et Disney+ utilisent aussi une integration dans les controles du lecteur quand l'interface expose un ancrage fiable. Les lecteurs HTML5 generiques sont prevus pour plus tard.
 
 ## Publication
 
