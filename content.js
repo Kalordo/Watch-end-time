@@ -64,6 +64,23 @@
     return null;
   }
 
+  function isPrimeTimeText(text) {
+    return /^\d{1,2}:\d{2}(?::\d{2})?\s*\/\s*\d{1,2}:\d{2}(?::\d{2})?$/.test(text.trim());
+  }
+
+  function findPrimeTimeDisplay() {
+    const elements = [...document.querySelectorAll("span, div, time")];
+
+    return elements
+      .filter((element) => isVisibleElement(element) && isPrimeTimeText(element.textContent || ""))
+      .sort((first, second) => {
+        const firstRect = first.getBoundingClientRect();
+        const secondRect = second.getBoundingClientRect();
+
+        return secondRect.top - firstRect.top || firstRect.left - secondRect.left;
+      })[0] || null;
+  }
+
   function formatClock(date) {
     return new Intl.DateTimeFormat(undefined, {
       hour: "2-digit",
@@ -198,9 +215,77 @@
     }
   };
 
+  const primeVideoAdapter = {
+    id: "primeVideo",
+
+    matchesHost(hostname) {
+      return matchesDomain(hostname, [
+        "primevideo.com",
+        "amazon.com",
+        "amazon.co.uk",
+        "amazon.de",
+        "amazon.fr",
+        "amazon.it",
+        "amazon.es",
+        "amazon.ca",
+        "amazon.co.jp",
+        "amazon.com.au",
+        "amazon.in"
+      ]);
+    },
+
+    findVideo() {
+      return findBestVideo();
+    },
+
+    findAnchor() {
+      const timeDisplay = findPrimeTimeDisplay();
+
+      if (timeDisplay) {
+        return timeDisplay;
+      }
+
+      return findFirstVisible([
+        '[data-testid="atvwebplayersdk-bottompanel-container"]',
+        '[data-testid="atvwebplayersdk-controls-container"]',
+        ".atvwebplayersdk-bottompanel-container",
+        ".atvwebplayersdk-controls-container",
+        ".atvwebplayersdk-control-bar",
+        '[class*="atvwebplayersdk-bottompanel"]',
+        '[class*="atvwebplayersdk-controls"]',
+        '[class*="webPlayerSDKUiContainer"]'
+      ]);
+    },
+
+    renderPlacement(element) {
+      const anchor = this.findAnchor();
+
+      if (!anchor) {
+        return false;
+      }
+
+      element.dataset.platform = this.id;
+
+      if (isPrimeTimeText(anchor.textContent || "")) {
+        if (element.parentElement !== anchor.parentElement || element.previousElementSibling !== anchor) {
+          anchor.insertAdjacentElement("afterend", element);
+        }
+
+        return true;
+      }
+
+      if (element.parentElement !== anchor) {
+        anchor.appendChild(element);
+      }
+
+      return true;
+    }
+  };
+
   const platformAdapters = [
     youtubeAdapter,
-    netflixAdapter
+    netflixAdapter,
+    primeVideoAdapter
   ];
 
   function getActiveAdapter() {

@@ -63,3 +63,26 @@
   transform: none;
   vertical-align: middle;
 }
+
+#watch-end-time-display[data-platform="primeVideo"] {
+  position: static;
+  top: auto;
+  display: inline-flex;
+  float: none;
+  width: auto;
+  height: auto;
+  margin: 0 0 0 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: rgb(255 255 255 / 68%);
+  font-family: "Amazon Ember", Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
+  transform: none;
+  vertical-align: baseline;
+}
