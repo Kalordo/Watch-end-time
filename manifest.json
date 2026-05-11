@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Watch End Time for YouTube",
+  "short_name": "Watch End Time",
+  "description": "Affiche l'heure estimée de fin directement dans le lecteur YouTube, en tenant compte de la vitesse de lecture.",
+  "version": "0.2.3",
+  "author": "3Devs",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Watch End Time for YouTube",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://youtube.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

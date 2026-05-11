@@ -1,0 +1,42 @@
+#watch-end-time-display {
+  position: relative;
+  top: 50%;
+  float: left;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 20px;
+  margin: 0 12px 0 8px;
+  padding: 0 8px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 26%);
+  color: rgb(255 255 255 / 90%);
+  font-family: "YouTube Noto", Roboto, Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 45%);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: opacity 0.1s linear;
+}
+
+#watch-end-time-display[data-state="inactive"] {
+  color: rgb(255 255 255 / 72%);
+}
+
+.ytp-big-mode #watch-end-time-display {
+  height: 24px;
+  margin-left: 12px;
+  margin-right: 14px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.ytp-autohide #watch-end-time-display {
+  opacity: 0;
+}
