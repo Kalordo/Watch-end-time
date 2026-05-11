@@ -1,6 +1,6 @@
-# Watch End Time for YouTube
+# Watch End Time
 
-Extension Chrome/Edge qui affiche l'heure estimee de fin directement dans le lecteur YouTube.
+Extension Chrome/Edge qui affiche l'heure estimee de fin dans les controles du lecteur YouTube et Netflix.
 
 Le badge tient compte de la duree restante, de l'heure locale et de la vitesse de lecture.
 
@@ -12,18 +12,19 @@ Createur : 3Devs.
 2. Activer le mode developpeur.
 3. Cliquer sur `Charger l'extension non empaquetee`.
 4. Selectionner ce dossier : `C:\Users\Yohann\youtube-end-time-extension`.
-5. Ouvrir une video YouTube.
+5. Ouvrir une video sur une plateforme supportee.
 
 ## Fonctionnalites
 
 - Affichage `Fin HH:MM:SS` integre dans les controles YouTube.
+- Integration Netflix dans les controles du lecteur quand une zone de controle fiable est detectee.
 - Mise a jour pendant la lecture, apres pause/reprise, seek et changement de vitesse.
 - Detection des videos terminees et des lives sans duree fiable.
 - Aucune permission sensible et aucune collecte de donnees.
 
 ## Compatibilite
 
-La premiere version publique cible YouTube. Le code est structure pour ajouter d'autres plateformes ensuite, comme Netflix, Prime Video ou Disney+, avec un badge natif quand c'est fiable et un badge flottant sinon.
+YouTube garde une integration native dans le lecteur. Netflix utilise aussi une integration dans les controles du lecteur quand l'interface expose un ancrage fiable. Prime Video, Disney+ et les lecteurs HTML5 generiques sont prevus pour plus tard.
 
 ## Publication
 

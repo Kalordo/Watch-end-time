@@ -40,3 +40,26 @@
 .ytp-autohide #watch-end-time-display {
   opacity: 0;
 }
+
+#watch-end-time-display[data-platform="netflix"] {
+  position: relative;
+  top: auto;
+  display: flex;
+  float: none;
+  width: fit-content;
+  height: 22px;
+  margin: 8px auto 0;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 12%);
+  color: rgb(255 255 255 / 86%);
+  font-family: "Netflix Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
+  transform: none;
+  vertical-align: middle;
+}

@@ -2,7 +2,7 @@
 
 ## Nom
 
-Watch End Time for YouTube
+Watch End Time
 
 ## Createur
 
@@ -10,17 +10,20 @@ Watch End Time for YouTube
 
 ## Resume court
 
-Affiche l'heure estimee de fin directement dans le lecteur YouTube.
+Affiche l'heure estimee de fin dans les lecteurs YouTube et Netflix.
 
 ## Description
 
-Watch End Time for YouTube ajoute un badge discret dans les controles du lecteur YouTube pour indiquer a quelle heure la video devrait se terminer, a la seconde pres.
+Watch End Time ajoute un badge discret pour indiquer a quelle heure la video devrait se terminer, a la seconde pres.
 
 Le calcul prend en compte la duree restante, l'heure locale et la vitesse de lecture actuelle. Si vous regardez une video en 1.25x, 1.5x ou 2x, l'heure de fin est ajustee automatiquement.
+
+Sur YouTube et Netflix, le badge est integre directement aux controles du lecteur quand une zone de controle fiable est detectee.
 
 ## Points cles
 
 - Integration directe dans le lecteur YouTube.
+- Integration directe dans le lecteur Netflix quand l'interface le permet.
 - Mise a jour automatique pendant la lecture.
 - Prise en compte de la vitesse de lecture.
 - Fonctionne sans compte, sans configuration et sans collecte de donnees.
@@ -28,8 +31,8 @@ Le calcul prend en compte la duree restante, l'heure locale et la vitesse de lec
 
 ## Permissions
 
-L'extension s'execute uniquement sur YouTube afin d'ajouter le badge dans le lecteur video. Elle ne lit pas l'historique, ne collecte pas de donnees et ne contacte aucun serveur externe.
+L'extension s'execute uniquement sur YouTube et Netflix afin d'ajouter le badge de fin estimee. Elle ne lit pas l'historique, ne collecte pas de donnees et ne contacte aucun serveur externe.
 
 ## Notes pour la suite
 
-L'architecture est preparee pour ajouter d'autres plateformes video plus tard, comme Netflix, Prime Video ou Disney+, avec une integration native quand elle est stable et un badge flottant discret sinon.
+L'architecture reste preparee pour ajouter d'autres plateformes video plus tard. Prime Video et Disney+ sont a venir, avec une integration native uniquement si elle est stable.

@@ -18,6 +18,52 @@
   let updateTimer = null;
   let activeVideo = null;
 
+  function isVisibleVideo(video) {
+    const rect = video.getBoundingClientRect();
+
+    return rect.width >= 120 && rect.height >= 90;
+  }
+
+  function isVisibleElement(element) {
+    if (!element) {
+      return false;
+    }
+
+    const rect = element.getBoundingClientRect();
+    const style = window.getComputedStyle(element);
+
+    return rect.width > 0 && rect.height > 0 && style.visibility !== "hidden" && style.display !== "none";
+  }
+
+  function findBestVideo() {
+    const videos = [...document.querySelectorAll("video")];
+
+    return videos
+      .filter((video) => isVisibleVideo(video))
+      .sort((first, second) => {
+        const firstRect = first.getBoundingClientRect();
+        const secondRect = second.getBoundingClientRect();
+
+        return secondRect.width * secondRect.height - firstRect.width * firstRect.height;
+      })[0] || null;
+  }
+
+  function matchesDomain(hostname, domains) {
+    return domains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`));
+  }
+
+  function findFirstVisible(selectors) {
+    for (const selector of selectors) {
+      const element = document.querySelector(selector);
+
+      if (isVisibleElement(element)) {
+        return element;
+      }
+    }
+
+    return null;
+  }
+
   function formatClock(date) {
     return new Intl.DateTimeFormat(undefined, {
       hour: "2-digit",
@@ -28,7 +74,7 @@
 
   function getEndTimeState(video, adapter) {
     if (!video) {
-      return { label: "Fin --:--:--", isActive: false };
+      return { label: "", isActive: false, isVisible: false };
     }
 
     if (adapter?.isLive?.()) {
@@ -79,6 +125,8 @@
     },
 
     renderPlacement(element) {
+      element.dataset.platform = this.id;
+
       const timeDisplay = this.findTimeDisplay();
 
       if (!timeDisplay) {
@@ -100,7 +148,60 @@
     }
   };
 
-  const platformAdapters = [youtubeAdapter];
+  const netflixAdapter = {
+    id: "netflix",
+
+    matchesHost(hostname) {
+      return matchesDomain(hostname, ["netflix.com"]);
+    },
+
+    findVideo() {
+      return findBestVideo();
+    },
+
+    findAnchor() {
+      return findFirstVisible([
+        '[data-uia="video-title"]',
+        '[data-uia="video-title-details"]',
+        '[data-uia="title-metadata"]',
+        ".ellipsize-text",
+        '[class*="title-metadata"]',
+        '[class*="video-title"]',
+        '[class*="metadata"]',
+        '[data-uia="player-controls-main"]',
+        '[data-uia="player-controls-container"]',
+        '[data-uia="controls-standard"]',
+        ".watch-video--bottom-controls-container",
+        ".PlayerControlsNeo__button-control-row",
+        ".PlayerControlsNeo__bottom-controls",
+        ".PlayerControlsNeo__controls",
+        '[class*="PlayerControlsNeo__button-control-row"]',
+        '[class*="PlayerControlsNeo__bottom-controls"]',
+        '[class*="watch-video--bottom-controls-container"]'
+      ]);
+    },
+
+    renderPlacement(element) {
+      const anchor = this.findAnchor();
+
+      if (!anchor) {
+        return false;
+      }
+
+      element.dataset.platform = this.id;
+
+      if (element.parentElement !== anchor) {
+        anchor.appendChild(element);
+      }
+
+      return true;
+    }
+  };
+
+  const platformAdapters = [
+    youtubeAdapter,
+    netflixAdapter
+  ];
 
   function getActiveAdapter() {
     return platformAdapters.find((adapter) => adapter.matchesHost(location.hostname));
@@ -131,7 +232,13 @@
       displayElement = createDisplay();
     }
 
-    return adapter.renderPlacement(displayElement);
+    const wasPlaced = adapter.renderPlacement(displayElement);
+
+    if (!wasPlaced) {
+      displayElement.hidden = true;
+    }
+
+    return wasPlaced;
   }
 
   function renderState(state) {
@@ -158,6 +265,18 @@
     renderState(getEndTimeState(adapter?.findVideo() || null, adapter));
   }
 
+  function sync() {
+    const video = getCurrentVideo();
+
+    attachDisplay();
+
+    if (video) {
+      bindVideoEvents(video);
+    }
+
+    updateEndTime();
+  }
+
   function bindVideoEvents(video) {
     if (!video || activeVideo === video) {
       return;
@@ -171,21 +290,10 @@
   }
 
   function start() {
-    const video = getCurrentVideo();
-
-    attachDisplay();
-
-    if (video) {
-      bindVideoEvents(video);
-    }
-
-    updateEndTime();
+    sync();
 
     if (!updateTimer) {
-      updateTimer = window.setInterval(() => {
-        attachDisplay();
-        updateEndTime();
-      }, UPDATE_INTERVAL_MS);
+      updateTimer = window.setInterval(sync, UPDATE_INTERVAL_MS);
     }
   }
 
@@ -193,4 +301,6 @@
 
   window.addEventListener("yt-navigate-finish", start);
   window.addEventListener("popstate", start);
+  window.addEventListener("pageshow", start);
+  document.addEventListener("visibilitychange", start);
 })();

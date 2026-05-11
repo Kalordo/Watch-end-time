@@ -18,8 +18,17 @@
 - Passer a une autre video sans recharger l'onglet, puis verifier que le badge suit la nouvelle video.
 - Ouvrir un live avec l'indicateur `En direct` visible et verifier que le badge de l'extension ne s'affiche pas, meme si YouTube expose une fenetre DVR avec une duree finie.
 
+## Netflix
+
+- Ouvrir une video Netflix et verifier qu'un badge `Fin HH:MM:SS` apparait dans les controles du lecteur.
+- Verifier que le badge ne flotte pas au-dessus de la page et ne recouvre pas la video.
+- Verifier que le badge ne bloque aucun bouton du lecteur Netflix.
+- Verifier qu'aucun badge ne s'affiche si les controles Netflix ne sont pas detectes.
+- Verifier qu'aucun badge ne s'affiche sur une page Netflix sans lecteur video actif.
+
 ## Regression
 
 - Verifier que les controles YouTube restent cliquables.
 - Verifier que le navigateur ne ralentit pas et que l'onglet ne plante pas.
 - Verifier que le badge disparait avec les controles quand YouTube masque l'interface.
+- Verifier que Prime Video, Disney+ et les autres sites non supportes n'injectent pas de badge.

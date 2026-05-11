@@ -18,7 +18,8 @@ heure de fin = maintenant + (duree totale - temps courant) / vitesse de lecture
 ## Plateformes prevues
 
 - `youtube` : integration native dans les controles du lecteur.
-- `netflix` : badge flottant au depart, integration native si stable.
-- `primeVideo` : badge flottant au depart, integration native si stable.
-- `disneyPlus` : badge flottant au depart, integration native si stable.
-- `genericHtml5` : optionnel, uniquement sur domaines explicitement autorises.
+- `netflix` : integration dans les controles du lecteur si un ancrage fiable est detecte.
+- `primeVideo` : a venir, integration native uniquement.
+- `disneyPlus` : a venir, integration native uniquement.
+
+Si un adaptateur ne trouve pas d'ancrage propre dans les controles du lecteur, il ne doit rien afficher. Les badges flottants globaux sont volontairement evites.

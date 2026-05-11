@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Watch End Time for YouTube",
+  "name": "Watch End Time",
   "short_name": "Watch End Time",
-  "description": "Affiche l'heure estimée de fin directement dans le lecteur YouTube, en tenant compte de la vitesse de lecture.",
-  "version": "0.2.4",
+  "description": "Affiche l'heure estimée de fin dans les contrôles du lecteur YouTube et Netflix, en tenant compte de la vitesse de lecture.",
+  "version": "0.3.0",
   "author": "3Devs",
   "icons": {
     "16": "icons/icon16.png",
@@ -11,7 +11,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Watch End Time for YouTube",
+    "default_title": "Watch End Time",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -22,7 +22,9 @@
     {
       "matches": [
         "https://www.youtube.com/*",
-        "https://youtube.com/*"
+        "https://youtube.com/*",
+        "https://www.netflix.com/*",
+        "https://*.netflix.com/*"
       ],
       "js": [
         "content.js"

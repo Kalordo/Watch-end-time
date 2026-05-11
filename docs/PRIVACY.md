@@ -1,8 +1,8 @@
 # Politique de confidentialite
 
-Watch End Time for YouTube, cree par 3Devs, ne collecte, ne stocke et ne transmet aucune donnee personnelle.
+Watch End Time, cree par 3Devs, ne collecte, ne stocke et ne transmet aucune donnee personnelle.
 
-L'extension lit uniquement les informations deja presentes dans le lecteur video de la page YouTube ouverte par l'utilisateur :
+L'extension lit uniquement les informations deja presentes dans le lecteur video de la page ouverte par l'utilisateur sur YouTube et Netflix :
 
 - duree de la video ;
 - position de lecture actuelle ;
