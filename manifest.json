@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Watch End Time",
   "short_name": "Watch End Time",
-  "description": "Affiche l'heure estimée de fin dans les contrôles des lecteurs YouTube, Netflix, Prime Video, Disney+, Vimeo, Dailymotion et Twitch.",
-  "version": "0.6.0",
+  "description": "Affiche l'heure estimée de fin directement dans les contrôles des lecteurs vidéo compatibles.",
+  "version": "0.6.1",
   "author": "3Devs",
   "icons": {
     "16": "icons/icon16.png",

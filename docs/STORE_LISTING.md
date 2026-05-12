@@ -10,7 +10,7 @@ Watch End Time
 
 ## Resume court
 
-Affiche l'heure estimee de fin dans les lecteurs YouTube, Netflix, Prime Video, Disney+, Vimeo, Dailymotion et Twitch.
+Affiche l'heure estimee de fin directement dans les lecteurs video compatibles.
 
 ## Description
 
@@ -18,15 +18,12 @@ Watch End Time ajoute un badge discret pour indiquer a quelle heure la video dev
 
 Le calcul prend en compte la duree restante, l'heure locale et la vitesse de lecture actuelle. Si vous regardez une video en 1.25x, 1.5x ou 2x, l'heure de fin est ajustee automatiquement.
 
-Sur YouTube, Netflix, Prime Video, Disney+, Vimeo, Dailymotion et Twitch VOD/replays, le badge est integre directement aux controles du lecteur quand une zone de controle fiable est detectee.
+Le badge est integre directement aux controles du lecteur quand une zone de controle fiable est detectee. Si l'extension ne trouve pas d'emplacement propre dans le lecteur, elle n'affiche rien.
 
 ## Points cles
 
-- Integration directe dans le lecteur YouTube.
-- Integration directe dans le lecteur Netflix quand l'interface le permet.
-- Integration directe dans le lecteur Prime Video/Amazon Video quand l'interface le permet.
-- Integration directe dans le lecteur Disney+ quand l'interface le permet.
-- Integration directe dans les lecteurs Vimeo, Dailymotion et Twitch VOD/replays quand l'interface le permet.
+- Integration directe dans les controles des lecteurs compatibles.
+- Affichage discret, sans badge flottant global.
 - Mise a jour automatique pendant la lecture.
 - Prise en compte de la vitesse de lecture.
 - Fonctionne sans compte, sans configuration et sans collecte de donnees.
@@ -34,7 +31,7 @@ Sur YouTube, Netflix, Prime Video, Disney+, Vimeo, Dailymotion et Twitch VOD/rep
 
 ## Permissions
 
-L'extension s'execute uniquement sur YouTube, Netflix, Prime Video/Amazon Video, Disney+, Vimeo, Dailymotion et Twitch afin d'ajouter le badge de fin estimee. Elle ne lit pas l'historique, ne collecte pas de donnees et ne contacte aucun serveur externe.
+L'extension s'execute uniquement sur les sites video compatibles declares dans le manifeste afin d'ajouter le badge de fin estimee. Elle ne lit pas l'historique, ne collecte pas de donnees et ne contacte aucun serveur externe.
 
 ## Notes pour la suite
 

@@ -2,7 +2,7 @@
 
 Watch End Time, cree par 3Devs, ne collecte, ne stocke et ne transmet aucune donnee personnelle.
 
-L'extension lit uniquement les informations deja presentes dans le lecteur video de la page ouverte par l'utilisateur sur YouTube, Netflix, Prime Video, Disney+, Vimeo, Dailymotion et Twitch :
+L'extension lit uniquement les informations deja presentes dans le lecteur video des sites compatibles declares dans le manifeste :
 
 - duree de la video ;
 - position de lecture actuelle ;

@@ -1,6 +1,6 @@
 # Watch End Time
 
-Extension Chrome/Edge qui affiche l'heure estimee de fin dans les controles des lecteurs YouTube, Netflix, Prime Video, Disney+, Vimeo, Dailymotion et Twitch.
+Extension Chrome/Edge qui affiche l'heure estimee de fin dans les controles des lecteurs video compatibles.
 
 Le badge tient compte de la duree restante, de l'heure locale et de la vitesse de lecture.
 
@@ -16,18 +16,16 @@ Createur : 3Devs.
 
 ## Fonctionnalites
 
-- Affichage `Fin HH:MM:SS` integre dans les controles YouTube.
-- Integration Netflix dans les controles du lecteur quand une zone de controle fiable est detectee.
-- Integration Prime Video/Amazon Video dans les controles du lecteur quand une zone de controle fiable est detectee.
-- Integration Disney+ dans les controles du lecteur quand une zone de controle fiable est detectee.
-- Integration Vimeo, Dailymotion et Twitch VOD/replays dans les controles du lecteur quand une zone de controle fiable est detectee.
+- Affichage `Fin HH:MM:SS` integre dans les controles des lecteurs compatibles.
+- Integration uniquement quand une zone de controle fiable est detectee.
+- Aucun badge flottant global si le lecteur ne fournit pas d'emplacement propre.
 - Mise a jour pendant la lecture, apres pause/reprise, seek et changement de vitesse.
 - Detection des videos terminees et des lives sans duree fiable.
 - Aucune permission sensible et aucune collecte de donnees.
 
 ## Compatibilite
 
-YouTube garde une integration native dans le lecteur. Netflix, Prime Video, Disney+, Vimeo, Dailymotion et Twitch VOD/replays utilisent aussi une integration dans les controles du lecteur quand l'interface expose un ancrage fiable. Les lecteurs HTML5 generiques sur tous les sites restent prevus pour plus tard, car ils demanderaient une permission plus large.
+L'extension cible des plateformes video declarees dans le manifeste et n'affiche le badge que lorsqu'une integration propre dans le lecteur est possible. Les lecteurs HTML5 generiques sur tous les sites restent prevus pour plus tard, car ils demanderaient une permission plus large.
 
 ## Publication
 
